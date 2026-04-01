@@ -1,0 +1,152 @@
+/* Tắt margin mặc định của body */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f6f9;
+}
+
+/* Khung container chính */
+#main-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 200%;
+}
+
+/* --- THANH MENU BÊN TRÁI (SIDEBAR) --- */
+#sidebar-wrapper {
+    width: 500px; /* Độ rộng cố định */
+    background-color: #0e0f11; /* Màu nền tối */
+    color: rgb(133, 11, 11);
+    flex-shrink: 0; /* Không cho phép Sidebar bị thu hẹp */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Tiêu đề Sidebar (Hệ thống Quản lý...) */
+#sidebar-wrapper .sidebar-heading {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    text-align: center;
+}
+
+/* Thông tin người dùng (Xin chào,...) */
+#sidebar-wrapper .user-panel {
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+#sidebar-wrapper .user-panel i {
+    color: #0076b1;
+}
+
+/* Danh sách menu */
+#sidebar-wrapper .list-group-flush {
+    flex: 1; /* Chiếm hết khoảng trống còn lại */
+}
+
+#sidebar-wrapper .list-group-item {
+    background: transparent;
+    color: rgba(255,255,255,0.8);
+    border: none;
+    padding: 1rem 1.5rem;
+    transition: all 0.2s ease;
+    border-radius: 0;
+}
+
+#sidebar-wrapper .list-group-item:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
+/* Mục menu đang được chọn */
+#sidebar-wrapper .list-group-item.active {
+    background-color: #0076b1; /* Màu xanh đặc trưng */
+    color: white;
+}
+
+/* --- VÙNG NỘI DUNG CHÍNH (CONTENT PANEL) --- */
+#content-wrapper {
+    flex: 1; /* Chiếm 100% chiều rộng còn lại */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Thanh Navbar trên cùng (Tên hệ thống) */
+#content-wrapper .navbar {
+    background-color: #0076b1; /* Màu xanh của bạn */
+    color: white;
+    padding: 1rem 2rem;
+}
+
+#content-wrapper .navbar-brand {
+    color: white !important;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Vùng chứa nội dung trang thực tế */
+#content-container {
+    padding: 2rem;
+    flex: 1;
+}
+
+/* Định dạng các thẻ Card (Card đăng nhập, card thống kê) */
+.card-login {
+    max-width: 400px;
+    margin: 100px auto 0; /* Cách lề trên 100px và căn giữa */
+}
+
+/* Thêm vào file style.css */
+.btn {
+    transition: all 0.3s ease; /* Tạo độ mượt khi đổi trạng thái */
+}
+
+.btn:hover {
+    transform: translateY(-2px); /* Nút bay lên nhẹ */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1); /* Thêm đổ bóng */
+}
+
+.btn:active {
+    transform: translateY(0); /* Nhấn xuống khi click */
+}
+
+/* Hiệu ứng trôi từ dưới lên */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 20px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* Áp dụng cho các Card trong Dashboard */
+.card {
+    animation: fadeInUp 0.5s ease backwards;
+}
+
+/* Các card xuất hiện so le nhau cho đẹp */
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+
+/* Áp dụng cho khung ĐĂNG NHẬP HỆ THỐNG */
+.login-card {
+    background: rgba(255, 255, 255, 0.85); /* Trắng trong suốt */
+    backdrop-filter: blur(10px); /* Làm mờ ảnh nền phía sau khung */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+}
+
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid #4e73df; /* Thanh xanh bên trái menu */
+}
+
+.nav-link:hover {
+    padding-left: 20px !important; /* Menu hơi nhích sang phải khi di chuột */
+    transition: 0.3s;
+}
+

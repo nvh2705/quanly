@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    /* 1. Thiết lập nền cho toàn bộ trang */
+    body {
+        background: url('{{ url_for("static", filename="img/logo3.png") }}') no-repeat center center fixed;
+        background-size: cover;
+        background-position: center center;
+        height: 100vh;
+        margin: 0;
+        /* Xóa bỏ display: flex ở body để tránh làm vỡ sidebar nếu có */
+    }
+
+    /* 2. Căn chỉnh khung đăng nhập nằm giữa */
+    .login-section {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 3. Chỉnh kích thước khung đăng nhập cho cân đối */
+    .login-card {
+        width: 100%;
+        max-width: 400px; /* Độ rộng chuẩn cho khung đăng nhập */
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+    }
+
+    /* 4. Ẩn Sidebar và các thành phần thừa ở trang Login */
+    .sidebar, .navbar, #accordionSidebar {
+        display: none !important;
+    }
+
+    /* 5. Đảm bảo vùng chứa không bị giới hạn chiều rộng */
+    #content-wrapper {
+        background: transparent !important;
+        width: 100%;
+    }
+</style>
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow rounded-3">
+            <div class="card-header bg-primary text-white text-center p-4">
+                
+                <img src="{{ url_for('static', filename='img/logo.png') }}" 
+                     alt="Logo" 
+                     class="img-fluid mb-3" 
+                     style="max-height: 80px;"> <h4 class="mb-0 fw-bold">ĐĂNG NHẬP HỆ THỐNG</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Tên đăng nhập</label>
+                        <input type="text" name="username" class="form-control form-control-lg" placeholder="Nhập tên đăng nhập" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Mật khẩu</label>
+                        <input type="password" name="password" class="form-control form-control-lg" placeholder="Nhập mật khẩu" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold mt-3">Vào hệ thống</button>
+                    <a href="{{ url_for('signup') }}" class="btn btn-link">Chưa có tài khoản? Đăng ký ở đây</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

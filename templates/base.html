@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Suất ăn</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --primary-color: #0d6efd;
+            --dark-bg: #1e293b;
+        }
+
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* SIDEBAR STYLES */
+        #sidebar {
+            width: var(--sidebar-width);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background-color: var(--dark-bg);
+            color: #fff;
+            z-index: 1000;
+            transition: all 0.3s;
+        }
+
+        .sidebar-brand {
+            padding: 1.5rem;
+            font-weight: bold;
+            font-size: 1.2rem;
+            background: rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .user-profile {
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .user-profile i {
+            font-size: 3rem;
+            color: #cbd5e1;
+        }
+
+        .nav-link {
+            color: #94a3b8 !important;
+            padding: 1rem 1.5rem !important;
+            display: flex;
+            align-items: center;
+            transition: 0.2s;
+        }
+
+        .nav-link i {
+            width: 25px;
+            margin-right: 10px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #fff !important;
+            background: rgba(255,255,255,0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        /* MAIN CONTENT STYLES */
+        #main-content {
+            margin-left: var(--sidebar-width); /* Khắc phục lỗi đè nội dung */
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .top-nav {
+            background: #fff;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 992px) {
+            #sidebar { margin-left: calc(-1 * var(--sidebar-width)); }
+            #main-content { margin-left: 0; }
+            #sidebar.active { margin-left: 0; }
+        }
+        /* Thêm vào file style.css */
+.btn {
+    transition: all 0.3s ease; /* Tạo độ mượt khi đổi trạng thái */
+}
+
+.btn:hover {
+    transform: translateY(-2px); /* Nút bay lên nhẹ */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1); /* Thêm đổ bóng */
+}
+
+.btn:active {
+    transform: translateY(0); /* Nhấn xuống khi click */
+}
+/* Hiệu ứng trôi từ dưới lên */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 20px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+/* Áp dụng cho các Card trong Dashboard */
+.card {
+    animation: fadeInUp 0.5s ease backwards;
+}
+
+/* Các card xuất hiện so le nhau cho đẹp */
+.card:nth-child(1) { animation-delay: 0.1s; }
+.card:nth-child(2) { animation-delay: 0.2s; }
+/* Áp dụng cho khung ĐĂNG NHẬP HỆ THỐNG */
+.login-card {
+    background: rgba(255, 255, 255, 0.85); /* Trắng trong suốt */
+    backdrop-filter: blur(10px); /* Làm mờ ảnh nền phía sau khung */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+}
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.1);
+    border-left: 4px solid #4e73df; /* Thanh xanh bên trái menu */
+}
+
+.nav-link:hover {
+    padding-left: 20px !important; /* Menu hơi nhích sang phải khi di chuột */
+    transition: 0.3s;
+}
+<style>
+    /* 1. ÉP NỀN CHÍNH SANG ĐEN */
+    body.dark-mode, 
+    body.dark-mode #wrapper, 
+    body.dark-mode #content-wrapper {
+        background-color: #000000 !important;
+    }
+
+    /* 2. ÉP SIDEBAR SANG TRẮNG */
+    body.dark-mode #accordionSidebar {
+        background-color: #ffffff !important;
+        background-image: none !important; /* Xóa màu gradient xanh mặc định */
+    }
+
+    /* Chỉnh chữ và icon trên Sidebar sang màu tối để nhìn rõ trên nền trắng */
+    body.dark-mode #accordionSidebar .nav-link,
+    body.dark-mode #accordionSidebar .nav-link i,
+    body.dark-mode #accordionSidebar .sidebar-brand {
+        color: #333333 !important;
+    }
+
+    /* 3. GIỮ CÁC KHỐI (CARD) MÀU TRẮNG */
+    body.dark-mode .card {
+        background-color: #ffffff !important;
+        color: #333333 !important;
+    }
+
+    /* Đảm bảo tiêu đề trong Card vẫn màu xanh/đen thay vì trắng */
+    body.dark-mode .card .m-0,
+    body.dark-mode .card label,
+    body.dark-mode .card .text-primary {
+        color: #4e73df !important;
+    }
+
+    /* 4. CHỈNH CÁC CHỮ NẰM NGOÀI KHỐI (H1, H3, Ngày tháng) SANG TRẮNG */
+    body.dark-mode h1, 
+    body.dark-mode .h3, 
+    body.dark-mode .text-gray-800,
+    body.dark-mode .topbar {
+        color: #ffffff !important;
+    }
+
+    /* Thanh ngang Navbar trên cùng cũng cho sang trắng cho hợp Sidebar */
+    body.dark-mode .navbar {
+        background-color: #ffffff !important;
+    }
+
+
+    </style>
+</head>
+<body>
+
+    <div id="flash-container" style="
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    width: 400px;
+    max-width: 90%;
+">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show text-center shadow auto-hide-alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+</div>
+    <div id="sidebar">
+        <div class="sidebar-brand">
+            <i class="fas fa-utensils me-2"></i> HT QUẢN LÝ SUẤT ĂN
+        </div>
+        
+        <div class="user-profile text-center py-3">
+    <i class="fas fa-user-circle fa-3x mb-2 text-light"></i>
+    
+    <h6 class="mb-0 text-white fw-bold">
+        {% if current_user.role == 'cbgv' %}
+            Cán bộ Giáo viên
+        {% elif current_user.role == 'hocvien' %}
+            Học viên
+        {% else %}
+            Quản trị viên
+        {% endif %}
+    </h6>
+    
+        </div>
+
+        <nav class="nav flex-column mt-3">
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.path == url_for('index') %}active{% endif %}">
+                <i class="fas fa-chart-line"></i> Trang chủ
+            </a>
+            <a href="{{ url_for('thong_ke_hoc_vien') }}" class="nav-link {% if 'thong-ke' in request.path %}active{% endif %}">
+                <i class="fas fa-users-viewfinder"></i> Thống kê Học viên
+            </a>
+            <a href="{{ url_for('y_kien_phan_hoi') }}" class="nav-link {% if 'y-kien' in request.path %}active{% endif %}">
+                <i class="fas fa-comment-dots"></i> Ý kiến phản hồi
+            </a>
+            <hr class="mx-3 bg-secondary">
+            <a href="{{ url_for('logout') }}" class="nav-link text-danger">
+                <i class="fas fa-power-off"></i> Đăng xuất
+            </a>
+            {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('admin_logs') }}" class="nav-link">
+                <i class="fas fa-shield-alt"></i> Bảo mật hệ thống
+            </a>
+            {% endif %}
+        </nav>
+
+    </div>
+
+
+    <div id="main-content">
+        <div class="top-nav">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item active fw-bold" aria-current="page text-uppercase">Học viện Kỹ thuật và Công nghệ An ninh</li>
+                </ol>
+            </nav>
+            <div class="text-muted small">
+                <i class="far fa-calendar-check me-1"></i> <span class="small text-muted fw-bold">
+    <i class="fas fa-clock me-1"></i> {{ thoi_gian_hien_tai.strftime('%H:%M | %d/%m/%Y') }}
+</span>
+            </div>
+            
+        </div>
+
+        <div class="content-body">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+    setTimeout(function () {
+        let alerts = document.querySelectorAll('.auto-hide-alert');
+        alerts.forEach(function(alert) {
+            let bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        });
+    }, 10000); // 10 giây
+</script>
+</body>
+<div id="chat-bubble" onclick="toggleChat()" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: #4e73df; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 1000;">
+    <i class="fas fa-comments fa-2x"></i>
+</div>
+
+<div id="chat-window" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 300px; height: 400px; background: white; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); flex-direction: column; z-index: 1000; overflow: hidden;">
+    <div style="background: #4e73df; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between;">
+        <span>Hỗ trợ hệ thống</span>
+        <i class="fas fa-times" onclick="toggleChat()" style="cursor: pointer;"></i>
+    </div>
+    
+    <div id="chat-content" style="flex: 1; padding: 10px; overflow-y: auto; background: #f8f9fc; font-size: 14px;">
+        <div style="background: #e3e6f0; padding: 8px; border-radius: 10px; margin-bottom: 10px; width: fit-content;">
+            Chào đồng chí! Bạn cần hỗ trợ gì về suất ăn hôm nay?
+        </div>
+    </div>
+
+    <div style="padding: 10px; border-top: 1px solid #eee; display: flex;">
+        <input type="text" id="chat-input" placeholder="Nhập tin nhắn..." style="flex: 1; border: none; outline: none;">
+        <button onclick="sendMessage()" style="background: none; border: none; color: #4e73df;"><i class="fas fa-paper-plane"></i></button>
+    </div>
+</div>
+
+<script>
+    function toggleChat() {
+        const chatWin = document.getElementById('chat-window');
+        chatWin.style.display = chatWin.style.display === 'none' ? 'flex' : 'none';
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const content = document.getElementById('chat-content');
+        
+        if (input.value.trim() !== "") {
+            // Hiển thị tin nhắn người dùng lên màn hình
+            content.innerHTML += `<div style="background: #4e73df; color: white; padding: 8px; border-radius: 10px; margin-bottom: 10px; margin-left: auto; width: fit-content;">${input.value}</div>`;
+            
+            // Gửi dữ liệu về Server Flask
+            fetch('/send-admin-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input.value })
+            });
+
+            input.value = "";
+            content.scrollTop = content.scrollHeight; // Tự cuộn xuống dưới
+        }
+    }
+    function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const content = document.getElementById('chat-content');
+    
+    if (input.value.trim() !== "") {
+        const userMsg = input.value;
+        
+        // 1. Hiển thị tin nhắn của người dùng (màu xanh)
+        content.innerHTML += `
+            <div style="background: #4e73df; color: white; padding: 8px; border-radius: 10px; margin-bottom: 10px; margin-left: auto; width: fit-content; max-width: 80%;">
+                ${userMsg}
+            </div>`;
+        
+        // Xóa nội dung ô nhập và cuộn xuống
+        input.value = "";
+        content.scrollTop = content.scrollHeight;
+
+        // 2. Gửi dữ liệu về Flask Server
+        fetch('/send-admin-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: userMsg })
+        });
+
+        // 3. Phản hồi tự động sau 1 giây
+        setTimeout(() => {
+            content.innerHTML += `
+                <div style="background: #e3e6f0; color: #333; padding: 8px; border-radius: 10px; margin-bottom: 10px; width: fit-content; max-width: 80%; border-left: 4px solid #1cc88a;">
+                    <small style="display:block; color: #1cc88a; font-weight: bold;">Hệ thống:</small>
+                    Admin đã tiếp nhận nội dung trên. Chúng tôi sẽ phản hồi đồng chí trong thời gian sớm nhất!
+                </div>`;
+            content.scrollTop = content.scrollHeight;
+        }, 1000);
+    }
+}
+</script>
+
+</html>

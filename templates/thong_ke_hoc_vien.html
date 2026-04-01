@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- HEADER -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="m-0 fw-bold">Quản lý vắng & Tiền thừa Học viên</h5>
+            
+            <div class="d-flex gap-3 align-items-center">
+
+                <!-- CHỌN LỚP -->
+                <form method="GET" action="{{ url_for('thong_ke_hoc_vien') }}" class="d-flex gap-2 align-items-center">
+                    <label class="mb-0 text-white">Lớp:</label>
+                    <select name="lop_id" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                        {% for cls in classes %}
+                            <option value="{{ cls.id }}" {% if cls.id == lop_id %}selected{% endif %}>
+                                {{ cls.ten_lop }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+
+                <!-- NÚT LƯU + EXPORT -->
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                <button type="submit" form="form-update-all" class="btn btn-sm btn-success shadow-sm">
+                    <i class="fas fa-save me-1"></i> Lưu
+                </button>
+
+                <a href="{{ url_for('export_excel') }}" 
+                   class="btn btn-sm btn-warning shadow-sm">
+                     Xuất Excel
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body">
+
+            <!-- THÊM LỚP -->
+            {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <form method="POST" class="mb-3 d-flex gap-2">
+                <input type="text" name="ten_lop" class="form-control w-25" placeholder="Tên lớp mới" required>
+                <button type="submit" name="action" value="add_class" class="btn btn-primary">
+                    ➕ Thêm lớp
+                </button>
+            </form>
+            {% endif %}
+
+            {% if lop_id %}
+
+            <!-- THÊM HỌC VIÊN -->
+            {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <form method="POST" class="mb-3 d-flex gap-2">
+                <input type="hidden" name="lop_id" value="{{ lop_id }}">
+                <input type="text" name="ten_hv" class="form-control w-25" placeholder="Tên học viên" required>
+                <button type="submit" name="action" value="add_student" class="btn btn-success">
+                    ➕ Thêm học viên
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- BẢNG -->
+            <div class="table-responsive">
+                <form id="form-update-all" method="POST" action="{{ url_for('update_stats_bulk') }}">
+                    <input type="hidden" name="lop_id" value="{{ lop_id }}">
+                    
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light text-center">
+                            <tr>
+                                <th rowspan="2">STT</th>
+                                <th rowspan="2">Họ và tên</th>
+                                <th colspan="3">Số buổi vắng</th>
+                                <th rowspan="2">Tiền thừa</th>
+                                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                                <th rowspan="2">Xóa</th>
+                                {% endif %}
+                            </tr>
+                            <tr>
+                                <th>Sáng</th>
+                                <th>Trưa</th>
+                                <th>Tối</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                        {% for hv in danh_sach_hv %}
+                        <tr class="text-center align-middle">
+                            <td>{{ loop.index }}</td>
+                            <td class="text-start fw-bold">{{ hv.ten }}</td>
+
+                            <!-- SÁNG -->
+                            <td>
+                                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                                <input type="number" name="vang_sang_{{ hv.id }}" 
+                                       class="form-control form-control-sm text-center input-vang"
+                                       value="{{ hv.vang_sang }}" min="0">
+                                {% else %}
+                                {{ hv.vang_sang }}
+                                {% endif %}
+                            </td>
+
+                            <!-- TRƯA -->
+                            <td>
+                                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                                <input type="number" name="vang_trua_{{ hv.id }}" 
+                                       class="form-control form-control-sm text-center input-vang"
+                                       value="{{ hv.vang_trua }}" min="0">
+                                {% else %}
+                                {{ hv.vang_trua }}
+                                {% endif %}
+                            </td>
+
+                            <!-- TỐI -->
+                            <td>
+                                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                                <input type="number" name="vang_toi_{{ hv.id }}" 
+                                       class="form-control form-control-sm text-center input-vang"
+                                       value="{{ hv.vang_toi }}" min="0">
+                                {% else %}
+                                {{ hv.vang_toi }}
+                                {% endif %}
+                            </td>
+
+                            <!-- TIỀN -->
+                            <td class="text-danger fw-bold">
+                                <span class="tien-thua-display">
+                                    {{ "{:,.0f}".format(hv.tien_thua) }}
+                                </span>đ
+                            </td>
+
+                            <!-- XÓA -->
+                            {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                            <td>
+                                <form method="POST">
+                                    <input type="hidden" name="hv_id" value="{{ hv.id }}">
+                                    <button type="submit" name="action" value="delete_student"
+                                            class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Xóa học viên?')">
+                                        🗑️
+                                    </button>
+                                </form>
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </form>
+            </div>
+
+            <!-- XÓA LỚP -->
+            {% if current_user.is_authenticated and current_user.role == 'admin' %}
+            <form method="POST" class="mt-3">
+                <input type="hidden" name="class_id" value="{{ lop_id }}">
+                <button type="submit" name="action" value="delete_class"
+                        class="btn btn-danger"
+                        onclick="return confirm('Xóa lớp này?')">
+                    🗑️ Xóa lớp
+                </button>
+            </form>
+            {% endif %}
+
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- CSS -->
+<style>
+.form-control:focus {
+    border-color: #4e73df;
+    box-shadow: 0 0 0 0.2rem rgba(78, 115, 223, 0.25);
+}
+</style>
+
+<!-- JS -->
+<script>
+const inputs = document.querySelectorAll('.input-vang');
+
+if (inputs.length > 0) {
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            const row = this.closest('tr');
+
+            const vSang = parseInt(row.querySelector('[name^="vang_sang_"]')?.value) || 0;
+            const vTrua = parseInt(row.querySelector('[name^="vang_trua_"]')?.value) || 0;
+            const vToi = parseInt(row.querySelector('[name^="vang_toi_"]')?.value) || 0;
+
+            const tong = (vSang * 15000) + (vTrua * 30000) + (vToi * 30000);
+
+            row.querySelector('.tien-thua-display').innerText = tong.toLocaleString('vi-VN');
+        });
+    });
+}
+</script>
+
+{% endblock %}

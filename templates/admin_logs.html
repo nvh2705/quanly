@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mb-4"> Lịch sử đăng nhập hệ thống</h3>
+
+<table class="table table-bordered table-hover">
+    <thead class="table-dark text-center">
+        <tr>
+            <th>User</th>
+            <th>Thời gian login</th>
+            <th>Thời gian logout</th>
+            <th>IP</th>
+            <th>Thời gian online</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr class="text-center">
+            <td>{{ log.username }}</td>
+            <td>{{ log.login_time }}</td>
+            <td>{{ log.logout_time or "Đang online" }}</td>
+            <td>{{ log.ip_address }}</td>
+            <td>
+                {% if log.logout_time %}
+                    {{ log.logout_time - log.login_time }}
+                {% else %}
+                    🟢 Đang hoạt động
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
