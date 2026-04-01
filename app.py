@@ -356,7 +356,7 @@ def thong_ke_hoc_vien():
         action = request.form.get('action')
         if action == 'add_class':
             ten_lop = request.form.get('ten_lop')
-
+  
             if ten_lop:
                 ten_lop = ten_lop.strip()
 
