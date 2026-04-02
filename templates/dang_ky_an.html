@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h3 class="mb-4">Lịch sử đăng ký ăn</h3>
+
+<table class="table table-bordered table-hover">
+    <thead class="table-dark text-center">
+        <tr>
+            <th>STT</th>
+            <th>Nội dung chi tiết</th>
+            <th>Thời gian</th>
+            <th>Trạng thái</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in data %}
+        <tr class="text-center">
+            <td>{{ item.stt }}</td>
+            <td class="text-start">{{ item.noi_dung }}</td>
+            <td>{{ item.thoi_gian }}</td>
+            <td>
+                {% if item.trang_thai == "Đã gửi" %}
+                    <span class="badge bg-success">Đã gửi</span>
+                {% else %}
+                    <span class="badge bg-secondary">Chưa gửi</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
+"""
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng ký ăn</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+    <h2>Danh sách đăng ký ăn</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Nội dung chi tiết</th>
+                <th>Thời gian</th>
+                <th>Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in data %}
+            <tr>
+                <td>{{ item.stt }}</td>
+                <td>{{ item.noi_dung }}</td>
+                <td>{{ item.thoi_gian }}</td>
+                <td>{{ item.trang_thai }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -22,6 +22,13 @@ login_manager.login_message_category = "danger"
 login_manager.login_view = 'login'
 
 # --- MODELS ---
+class AdminLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    is_read = db.Column(db.Boolean, default=False)
+
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -29,6 +36,7 @@ class User(UserMixin, db.Model):
     fullname = db.Column(db.String(100))
     role = db.Column(db.String(20), nullable=False) # admin, nhaan, cbgv, loppho, hocvien
     unit = db.Column(db.String(50)) # Lớp hoặc Khoa
+    is_read = db.Column(db.Boolean, default=False)
 
 class MealRegistration(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -46,6 +54,7 @@ class LoginHistory(db.Model):
     login_time = db.Column(db.DateTime)
     logout_time = db.Column(db.DateTime)
     ip_address = db.Column(db.String(50))
+    content = db.Column(db.String(500))  # Thêm trường content để lưu thông tin đăng ký ăn
 
 class ClassModel(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -67,6 +76,7 @@ class Message(db.Model):
     role = db.Column(db.String(20))    # admin / hocvien / cbgv
     content = db.Column(db.Text)
     reply_to = db.Column(db.Integer, nullable=True)
+    is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class StaffStatistic(db.Model):
@@ -259,36 +269,61 @@ def index():
 @app.route('/update-meal', methods=['POST'])
 @login_required
 def update_meal():
-    if current_user.role not in ['hocvien', 'cbgv']:
-        return "Không có quyền", 403
-    date_str = request.form.get('date')
-    sang = request.form.get('sang') == 'on'
-    trua = request.form.get('trua') == 'on'
-    toi = request.form.get('toi') == 'on'
+    # --- BƯỚC 1: KIỂM TRA QUYỀN (CHẶN ADMIN & HOCVIEN) ---
+    if current_user.role in ['admin', 'hocvien']:
+        role_name = "Học viên" if current_user.role == 'hocvien' else "Quản trị viên"
+        flash(f"Tài khoản {role_name} không được phép đăng ký ăn!", "danger")
+        return redirect(url_for('meal_schedule'))
 
-    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+    # --- BƯỚC 2: CHỈ XỬ LÝ NẾU LÀ CBGV ---
+    if current_user.role == 'cbgv':
+        date_str = request.form.get('date')
+        sang = request.form.get('sang') == 'on'
+        trua = request.form.get('trua') == 'on'
+        toi = request.form.get('toi') == 'on'
 
-    meal = MealRegistration.query.filter_by(
-        user_id=current_user.id,
-        date=date_obj
-    ).first()
+        try:
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+            meal = MealRegistration.query.filter_by(
+                user_id=current_user.id, 
+                date=date_obj
+            ).first()
 
-    if not meal:
-        meal = MealRegistration(
-            user_id=current_user.id,
-            date=date_obj
+            if not meal:
+                meal = MealRegistration(user_id=current_user.id, date=date_obj)
+                db.session.add(meal)
+
+            meal.sang = sang
+            meal.trua = trua
+            meal.toi = toi
+            db.session.commit()
+            # Trong hàm update_meal của app.py
+            new_notification = AdminLog(
+            content=f"Đồng chí {current_user.username} đã đăng ký ăn ngày {date_obj}",
+            is_read=False # Đánh dấu là chưa đọc để hiện Badge đỏ
         )
-        db.session.add(meal)
+            db.session.add(new_notification)
+            db.session.commit()    
+        
+            # --- PHẦN THÊM MỚI: GỬI THÔNG BÁO CHO ADMIN ---
+            status_text = []
+            if sang: status_text.append("Sáng")
+            if trua: status_text.append("Trưa")
+            if toi: status_text.append("Tối")
+            meals_booked = ", ".join(status_text) if status_text else "Cắt cơm cả ngày"
 
-    meal.sang = sang
-    meal.trua = trua
-    meal.toi = toi
-
-    db.session.commit()
-
-    flash("Cập nhật đăng ký ăn thành công!", "success")
+            new_log = AdminLog(
+                content=f"CBGV {current_user.username} đã đăng ký ăn ngày {date_obj.strftime('%d/%m')}: {meals_booked}"
+            )
+            db.session.add(new_log)
+            db.session.commit()
+            # ----------------------------------------------
+            flash(f"Đã cập nhật đăng ký ăn ngày {date_obj.strftime('%d/%m')} thành công!", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash("Lỗi hệ thống khi lưu dữ liệu!", "danger")
+    
     return redirect(url_for('meal_schedule'))
-
 
 @app.route('/meal-schedule')
 @login_required
@@ -394,15 +429,23 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-@app.route('/admin/logs')
+@app.route('/admin/log')
 @login_required
 def admin_logs():
     # 🔥 CHỈ ADMIN ĐƯỢC XEM
     if current_user.role != 'admin':
         return "❌ Bạn không có quyền truy cập!", 403
-
+    if current_user.role != 'admin':
+        return "Không có quyền", 403
+    
+    logs = AdminLog.query.order_by(AdminLog.created_at.desc()).all()
+    # Đánh dấu đã đọc khi admin truy cập
+    for log in logs:
+        log.is_read = True
+    db.session.commit()
+    danh_sach_logs = AdminLog.query.order_by(AdminLog.created_at.desc()).all()
     logs = LoginHistory.query.order_by(LoginHistory.login_time.desc()).all()
-    return render_template('admin_logs.html', logs=logs)
+    return render_template('admin_log.html', logs=danh_sach_logs)
 
 # Route dành cho CBGV: Đăng ký nhanh trưa cả tuần
 @app.route('/cbgv/quick-register', methods=['POST'])
@@ -491,20 +534,7 @@ def thong_ke_hoc_vien():
             if cls:
                 db.session.delete(cls)
                 db.session.commit()
-        elif action == 'update_class':
-            class_id = request.form.get('class_id')
-            so_luong = int(request.form.get('so_luong', 0))
 
-            cls = ClassModel.query.get(class_id)
-            if cls:
-                cls.so_luong = so_luong
-                db.session.commit()
-                print("Cập nhật thành công")
-
-            # so_luong = ClassModel.query.get('so_luong')
-            # if so_luong:
-            #     cls.so_luong = so_luong
-            #     db.session.commit()
 
         elif action == 'add_student':
             ten_hv = request.form.get('ten_hv')
@@ -793,44 +823,34 @@ def export_excel():
         download_name="thong_ke_tat_ca_lop.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+    
+@app.context_processor
+def inject_globals():
+    # Khởi tạo giá trị mặc định là None
+    admin_log_cls = None
+    message_cls = None
+    
+    try:
+        # Thử import nếu đồng chí có file models.py riêng
+        from models import AdminLog, Message
+        admin_log_cls = AdminLog
+        message_cls = Message
+    except (ImportError, ModuleNotFoundError):
+        # Nếu không thấy file models.py, thử lấy trực tiếp trong app.py
+        try:
+            from __main__ import AdminLog, Message
+            admin_log_cls = AdminLog
+            message_cls = Message
+        except ImportError:
+            # Nếu vẫn không thấy, tìm trong scope hiện tại
+            import sys
+            current_module = sys.modules[__name__]
+            admin_log_cls = getattr(current_module, 'AdminLog', None)
+            message_cls = getattr(current_module, 'Message', None)
 
-@app.route("/dang-ky-an")
-def dang_ky_an():
-    # Placeholder data (5 rows)
-    data = [
-        {
-            "stt": 1,
-            "noi_dung": "CBGV đã đăng kí ăn ngày 02/04: Trưa",
-            "thoi_gian": "02/04/2026 10:00",
-            "trang_thai": "Đã gửi"
-        },
-        {
-            "stt": 2,
-            "noi_dung": "CBGV đã đăng kí ăn ngày 02/04: Sáng",
-            "thoi_gian": "02/04/2026 08:00",
-            "trang_thai": "Đã gửi"
-        },
-        {
-            "stt": 3,
-            "noi_dung": "CBGV đã đăng kí ăn ngày 03/04: Tối",
-            "thoi_gian": "03/04/2026 17:00",
-            "trang_thai": "Chưa gửi"
-        },
-        {
-            "stt": 4,
-            "noi_dung": "CBGV đã đăng kí ăn ngày 04/04: Trưa",
-            "thoi_gian": "04/04/2026 10:30",
-            "trang_thai": "Đã gửi"
-        },
-        {
-            "stt": 5,
-            "noi_dung": "CBGV đã đăng kí ăn ngày 05/04: Sáng",
-            "thoi_gian": "05/04/2026 07:45",
-            "trang_thai": "Chưa gửi"
-        }
-    ]
+    return dict(AdminLog=admin_log_cls, Message=message_cls)
+    
 
-    return render_template("dang_ky_an.html", data=data)
 
 if __name__ == '__main__':
     setup_db()

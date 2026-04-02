@@ -266,6 +266,9 @@
             <a href="{{ url_for('thong_ke_hoc_vien') }}" class="nav-link {% if 'thong-ke' in request.path %}active{% endif %}">
                 <i class="fas fa-users-viewfinder"></i> Thống kê Học viên
             </a>
+            <a href="{{ url_for('dang_ky_an') }}" class="nav-link {% if 'dang-ky-an' in request.path %}active{% endif %}">
+                <i class="fas fa-comment-dots"></i> Thống kê CB
+            </a>
             <a href="{{ url_for('y_kien_phan_hoi') }}" class="nav-link {% if 'y-kien' in request.path %}active{% endif %}">
                 <i class="fas fa-comment-dots"></i> Ý kiến phản hồi
             </a>
