@@ -150,3 +150,67 @@ body {
     transition: 0.3s;
 }
 
+#flash-container .alert {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+}
+
+/* Alert danger (lỗi) */
+#flash-container .alert-danger {
+    background: linear-gradient(45deg, #ff4d4f, #ff7875) !important;
+    color: white !important;
+    border: none !important;
+}
+
+/* Nút X */
+#flash-container .btn-close {
+    filter: invert(1);
+}
+#flash-container {
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -30px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+
+.chat-box {
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    animation: fadeInUp 0.4s ease;
+    transition: 0.3s;
+}
+
+.chat-box:hover {
+    transform: translateY(-3px);
+}
+
+.chat-user {
+    background: #4e73df;
+    color: white;
+    padding: 10px;
+    border-radius: 12px;
+    max-width: 70%;
+}
+
+.chat-admin {
+    background: #f1f5f9;
+    padding: 10px;
+    border-radius: 12px;
+    margin-top: 10px;
+    max-width: 70%;
+    border-left: 4px solid #1cc88a;
+}
+

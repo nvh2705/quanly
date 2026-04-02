@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h4 class="mb-3">Đăng ký suất ăn tuần</h4>
+
+    <table class="table table-bordered text-center">
+        <thead>
+            <tr>
+                <th>Ngày</th>
+                <th>Sáng</th>
+                <th>Trưa</th>
+                <th>Tối</th>
+                <th>Lưu</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for d in week_dates %}
+        {% set meal = meal_dict.get(d) %}
+        <tr>
+            <form method="POST" action="{{ url_for('update_meal') }}">
+                <td>
+                    {{ d.strftime('%d/%m') }}
+                    <input type="hidden" name="date" value="{{ d }}">
+                </td>
+
+                <td>
+                    <input type="checkbox" name="sang"
+                        {% if meal and meal.sang %}checked{% endif %}>
+                </td>
+
+                <td>
+                    <input type="checkbox" name="trua"
+                        {% if meal and meal.trua %}checked{% endif %}>
+                </td>
+
+                <td>
+                    <input type="checkbox" name="toi"
+                        {% if meal and meal.toi %}checked{% endif %}>
+                </td>
+
+                <td>
+                    <button class="btn btn-sm btn-success">Lưu</button>
+                </td>
+            </form>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

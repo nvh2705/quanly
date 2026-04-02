@@ -17,6 +17,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
+login_manager.login_message = "Bạn cần đăng nhập để truy cập trang này!"
+login_manager.login_message_category = "danger"
 login_manager.login_view = 'login'
 
 # --- MODELS ---
@@ -59,6 +61,21 @@ class StudentStatistic(db.Model):
     tien_thua = db.Column(db.Integer, default=0)
     lop_rel = db.relationship('ClassModel', backref='students')
 
+class Message(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sender = db.Column(db.String(50))  # username
+    role = db.Column(db.String(20))    # admin / hocvien / cbgv
+    content = db.Column(db.Text)
+    reply_to = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class StaffStatistic(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    don_vi = db.Column(db.String(50))  # Khoa / Phòng
+    so_luong = db.Column(db.Integer, default=0)
+    vang_sang = db.Column(db.Integer, default=0)
+    vang_trua = db.Column(db.Integer, default=0)
+    vang_toi = db.Column(db.Integer, default=0)
 
 # --- LOGIC HỖ TRỢ ---
 def init_default_meals(user_id, start_date):
@@ -77,6 +94,7 @@ def init_default_meals(user_id, start_date):
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
+
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
@@ -191,14 +209,109 @@ def get_current_menu_with_price():
 @login_required
 def index():
     current_menu, today_name = get_current_menu()
-    # Thống kê mẫu cho Cán bộ nhà ăn
     menu, prices = get_current_menu_with_price()
+
+    # ✅ Tổng học viên
+    total_students = StudentStatistic.query.count()
+
+    # 👉 Tổng vắng
+    tong_vang_sang = db.session.query(db.func.sum(StudentStatistic.vang_sang)).scalar() or 0
+    tong_vang_trua = db.session.query(db.func.sum(StudentStatistic.vang_trua)).scalar() or 0
+    tong_vang_toi = db.session.query(db.func.sum(StudentStatistic.vang_toi)).scalar() or 0
+
+    hv_an_sang = total_students - tong_vang_sang
+    hv_an_trua = total_students - tong_vang_trua
+    hv_an_toi = total_students - tong_vang_toi
+
+
+    # ===============================
+    # 🔥 CBGV (THEO KHOA / ĐƠN VỊ)
+    # ===============================
+
+    total_staff = db.session.query(db.func.sum(StaffStatistic.so_luong)).scalar() or 0
+
+    staff_vang_sang = db.session.query(db.func.sum(StaffStatistic.vang_sang)).scalar() or 0
+    staff_vang_trua = db.session.query(db.func.sum(StaffStatistic.vang_trua)).scalar() or 0
+    staff_vang_toi = db.session.query(db.func.sum(StaffStatistic.vang_toi)).scalar() or 0
+
+    gv_an_sang = total_staff - staff_vang_sang
+    gv_an_trua = total_staff - staff_vang_trua
+    gv_an_toi = total_staff - staff_vang_toi
+
+
+    # 👉 GỘP
     stats = {
-        'sang': {'hv': 70, 'gv': 0},
-        'trua': {'hv': 70, 'gv': 1},
-        'toi': {'hv': 70, 'gv': 1}
+        'sang': {'hv': hv_an_sang, 'gv': gv_an_sang},
+        'trua': {'hv': hv_an_trua, 'gv': gv_an_trua},
+        'toi': {'hv': hv_an_toi, 'gv': gv_an_toi}
     }
-    return render_template('index.html', stats=stats, datetime=datetime,menu=current_menu,today_name=today_name,prices=prices)
+
+    return render_template(
+        'index.html',
+        stats=stats,
+        datetime=datetime,
+        menu=current_menu,
+        today_name=today_name,
+        prices=prices,
+        total_students=total_students   # 🔥 TRUYỀN SANG HTML
+    )
+
+@app.route('/update-meal', methods=['POST'])
+@login_required
+def update_meal():
+    if current_user.role not in ['hocvien', 'cbgv']:
+        return "Không có quyền", 403
+    date_str = request.form.get('date')
+    sang = request.form.get('sang') == 'on'
+    trua = request.form.get('trua') == 'on'
+    toi = request.form.get('toi') == 'on'
+
+    date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+    meal = MealRegistration.query.filter_by(
+        user_id=current_user.id,
+        date=date_obj
+    ).first()
+
+    if not meal:
+        meal = MealRegistration(
+            user_id=current_user.id,
+            date=date_obj
+        )
+        db.session.add(meal)
+
+    meal.sang = sang
+    meal.trua = trua
+    meal.toi = toi
+
+    db.session.commit()
+
+    flash("Cập nhật đăng ký ăn thành công!", "success")
+    return redirect(url_for('meal_schedule'))
+
+
+@app.route('/meal-schedule')
+@login_required
+def meal_schedule():
+    today = datetime.now().date()
+    start_of_week = today - timedelta(days=today.weekday())
+
+    week_dates = [start_of_week + timedelta(days=i) for i in range(7)]
+
+    meals = MealRegistration.query.filter(
+        MealRegistration.user_id == current_user.id,
+        MealRegistration.date >= week_dates[0],
+        MealRegistration.date <= week_dates[-1]
+    ).all()
+
+    meal_dict = {m.date: m for m in meals}
+
+    return render_template(
+        'meal_schedule.html',
+        week_dates=week_dates,
+        meal_dict=meal_dict
+    )
+
 
 
 
@@ -378,6 +491,21 @@ def thong_ke_hoc_vien():
             if cls:
                 db.session.delete(cls)
                 db.session.commit()
+        elif action == 'update_class':
+            class_id = request.form.get('class_id')
+            so_luong = int(request.form.get('so_luong', 0))
+
+            cls = ClassModel.query.get(class_id)
+            if cls:
+                cls.so_luong = so_luong
+                db.session.commit()
+                print("Cập nhật thành công")
+
+            # so_luong = ClassModel.query.get('so_luong')
+            # if so_luong:
+            #     cls.so_luong = so_luong
+            #     db.session.commit()
+
         elif action == 'add_student':
             ten_hv = request.form.get('ten_hv')
             lop_id = request.form.get('lop_id')
@@ -444,7 +572,14 @@ def y_kien_phan_hoi():
                 'trang_thai': 'Chờ xử lý'
             }
             # 3. Thêm vào đầu danh sách để nó hiện lên trên cùng
-            feedbacks.insert(0, new_entry)
+            msg = Message(
+                sender=current_user.username if current_user.is_authenticated else "Ẩn danh",
+                role=current_user.role if current_user.is_authenticated else "guest",
+                content=noi_dung_moi
+            )
+
+            db.session.add(msg)
+            db.session.commit()
             
         # 4. Sau khi xử lý xong, chuyển hướng lại chính trang này để cập nhật bảng
         return redirect(url_for('y_kien_phan_hoi'))
@@ -458,20 +593,67 @@ def inject_now():
     return {'thoi_gian_hien_tai': datetime.now()}
 
 @app.route('/send-admin-message', methods=['POST'])
+@login_required
 def send_admin_message():
     data = request.get_json()
     noi_dung = data.get('message')
-    
-    # Lấy thông tin vai trò để Admin dễ quản lý
-    vaitro = session.get('vaitro', 'Người dùng') 
-    username = session.get('user_id', 'Ẩn danh')
 
-    # Lưu vào Database hoặc in ra Terminal để kiểm tra
-    print(f"--- TIN NHẮN MỚI ---")
-    print(f"Từ: {vaitro} ({username})")
-    print(f"Nội dung: {noi_dung}")
-    
+    msg = Message(
+        sender=current_user.username,
+        role=current_user.role,
+        content=noi_dung
+    )
+
+    db.session.add(msg)
+    db.session.commit()
+
     return jsonify(success=True)
+
+@app.route('/get-messages')
+@login_required
+def get_messages():
+    messages = Message.query.order_by(Message.created_at).all()
+
+    return jsonify([
+        {
+            "id": m.id,
+            "sender": m.sender,
+            "role": m.role,
+            "content": m.content,
+            "reply_to": m.reply_to
+        } for m in messages
+    ])
+
+@app.route('/admin/messages')
+@login_required
+def admin_messages():
+    if current_user.role != 'admin':
+        return "Không có quyền", 403
+
+    messages = Message.query.order_by(Message.created_at.desc()).all()
+    return render_template('admin_messages.html', messages=messages)
+
+@app.route('/admin/reply/<int:msg_id>', methods=['POST'])
+@login_required
+def reply_message(msg_id):
+    if current_user.role != 'admin':
+        return "Không có quyền", 403
+
+    content = request.form.get('reply')
+
+    reply = Message(
+        sender=current_user.username,
+        role='admin',
+        content=content,
+        reply_to=msg_id
+    )
+
+    db.session.add(reply)
+    db.session.commit()
+
+    return redirect(url_for('admin_messages'))
+
+
 
 @app.route('/update_stats_bulk', methods=['POST'])
 @login_required
@@ -611,6 +793,8 @@ def export_excel():
         download_name="thong_ke_tat_ca_lop.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+
 
 if __name__ == '__main__':
     setup_db()

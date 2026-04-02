@@ -4,8 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ thống Quản lý Suất ăn</title>
+
+    <!-- Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- 🔥 CSS của bạn -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         :root {
             --sidebar-width: 260px;
@@ -212,8 +219,14 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show text-center shadow auto-hide-alert">
-                    {{ message }}
+                <div class="alert 
+                    {% if category == 'danger' %}
+                    alert-danger fw-bold text-white
+                    {% else %}
+                    alert-{{ category }}
+                    {% endif %}
+                    alert-dismissible fade show text-center shadow auto-hide-alert">
+            {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             {% endfor %}
@@ -245,6 +258,11 @@
             <a href="{{ url_for('index') }}" class="nav-link {% if request.path == url_for('index') %}active{% endif %}">
                 <i class="fas fa-chart-line"></i> Trang chủ
             </a>
+            <li class="nav-item">
+                <a href="{{ url_for('meal_schedule') }}" class="nav-link">
+                    🍽 Đăng ký ăn
+                </a>
+            </li>
             <a href="{{ url_for('thong_ke_hoc_vien') }}" class="nav-link {% if 'thong-ke' in request.path %}active{% endif %}">
                 <i class="fas fa-users-viewfinder"></i> Thống kê Học viên
             </a>
@@ -259,7 +277,11 @@
             <a href="{{ url_for('admin_logs') }}" class="nav-link">
                 <i class="fas fa-shield-alt"></i> Bảo mật hệ thống
             </a>
+            <a href="{{ url_for('admin_messages') }}" class="nav-link">
+                <i class="fas fa-comments"></i> Quản lý chat
+            </a>
             {% endif %}
+            
         </nav>
 
     </div>
@@ -322,63 +344,131 @@
 <script>
     function toggleChat() {
         const chatWin = document.getElementById('chat-window');
-        chatWin.style.display = chatWin.style.display === 'none' ? 'flex' : 'none';
-    }
+        const isOpen = chatWin.style.display === 'flex';
 
-    function sendMessage() {
-        const input = document.getElementById('chat-input');
-        const content = document.getElementById('chat-content');
-        
-        if (input.value.trim() !== "") {
-            // Hiển thị tin nhắn người dùng lên màn hình
-            content.innerHTML += `<div style="background: #4e73df; color: white; padding: 8px; border-radius: 10px; margin-bottom: 10px; margin-left: auto; width: fit-content;">${input.value}</div>`;
-            
-            // Gửi dữ liệu về Server Flask
-            fetch('/send-admin-message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: input.value })
-            });
+        chatWin.style.display = isOpen ? 'none' : 'flex';
 
-            input.value = "";
-            content.scrollTop = content.scrollHeight; // Tự cuộn xuống dưới
+        if (!isOpen) {
+            loadMessages(); // 🔥 LOAD KHI MỞ CHAT
         }
     }
     function sendMessage() {
-    const input = document.getElementById('chat-input');
-    const content = document.getElementById('chat-content');
-    
-    if (input.value.trim() !== "") {
-        const userMsg = input.value;
-        
-        // 1. Hiển thị tin nhắn của người dùng (màu xanh)
-        content.innerHTML += `
-            <div style="background: #4e73df; color: white; padding: 8px; border-radius: 10px; margin-bottom: 10px; margin-left: auto; width: fit-content; max-width: 80%;">
-                ${userMsg}
-            </div>`;
-        
-        // Xóa nội dung ô nhập và cuộn xuống
-        input.value = "";
-        content.scrollTop = content.scrollHeight;
+        const input = document.getElementById('chat-input');
+        const content = document.getElementById('chat-content');
 
-        // 2. Gửi dữ liệu về Flask Server
-        fetch('/send-admin-message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userMsg })
+        if (input.value.trim() !== "") {
+            const userMsg = input.value;
+
+            // 🔵 1. GIỮ NGUYÊN hiệu ứng tin nhắn user
+            content.innerHTML += `
+                <div style="
+                    background: #4e73df; 
+                    color: white; 
+                    padding: 8px; 
+                    border-radius: 10px; 
+                    margin-bottom: 10px; 
+                    margin-left: auto; 
+                    width: fit-content; 
+                    max-width: 80%;
+                ">
+                    ${userMsg}
+                </div>
+            `;
+
+            // 🔥 2. GỬI SERVER (THÊM await để chắc chắn lưu)
+            fetch('/send-admin-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userMsg })
+            });
+
+            input.value = "";
+            content.scrollTop = content.scrollHeight;
+
+            // 🟢 3. GIỮ NGUYÊN hiệu ứng auto reply
+            setTimeout(() => {
+                content.innerHTML += `
+                    <div style="
+                        background: #e3e6f0; 
+                        color: #333; 
+                        padding: 8px; 
+                        border-radius: 10px; 
+                        margin-bottom: 10px; 
+                        width: fit-content; 
+                        max-width: 80%; 
+                        border-left: 4px solid #1cc88a;
+                    ">
+                        <small style="display:block; color: #1cc88a; font-weight: bold;">
+                            Hệ thống:
+                        </small>
+                        Admin đã tiếp nhận nội dung trên. Chúng tôi sẽ phản hồi đồng chí trong thời gian sớm nhất!
+                    </div>
+                `;
+                content.scrollTop = content.scrollHeight;
+            }, 1000);
+
+            // 🔥 4. LOAD LẠI CHAT SAU 1.5s (THÊM MỚI)
+            setTimeout(() => {
+                loadMessages();
+            }, 1500);
+        }
+    }
+
+    function loadMessages() {
+    fetch('/get-messages')
+    .then(res => res.json())
+    .then(data => {
+        const content = document.getElementById('chat-content');
+
+        content.innerHTML = `
+            <div style="background: #e3e6f0; padding: 8px; border-radius: 10px; margin-bottom: 10px;">
+                Chào đồng chí! Bạn cần hỗ trợ gì về suất ăn hôm nay?
+            </div>
+        `;
+
+        // 👉 CHỈ HIỂN THỊ MESSAGE GỐC (KHÔNG PHẢI REPLY)
+        data.filter(m => !m.reply_to).forEach(msg => {
+
+            // USER MESSAGE
+            content.innerHTML += `
+                <div style="
+                    background: #4e73df; 
+                    color: white; 
+                    padding: 8px; 
+                    border-radius: 10px; 
+                    margin-bottom: 10px; 
+                    margin-left: auto; 
+                    max-width: 80%;
+                ">
+                    ${msg.content}
+                </div>
+            `;
+
+            // 👉 TÌM REPLY CỦA ADMIN
+            data.filter(r => r.reply_to === msg.id).forEach(reply => {
+                content.innerHTML += `
+                    <div style="
+                        background: #e3e6f0; 
+                        padding: 8px; 
+                        border-radius: 10px; 
+                        margin-bottom: 10px; 
+                        max-width: 80%;
+                        border-left: 4px solid #f6c23e;
+                    ">
+                        <small style="font-weight:bold; color:#f6c23e;">
+                            Admin:
+                        </small><br>
+                        ${reply.content}
+                    </div>
+                `;
+            });
+
         });
 
-        // 3. Phản hồi tự động sau 1 giây
-        setTimeout(() => {
-            content.innerHTML += `
-                <div style="background: #e3e6f0; color: #333; padding: 8px; border-radius: 10px; margin-bottom: 10px; width: fit-content; max-width: 80%; border-left: 4px solid #1cc88a;">
-                    <small style="display:block; color: #1cc88a; font-weight: bold;">Hệ thống:</small>
-                    Admin đã tiếp nhận nội dung trên. Chúng tôi sẽ phản hồi đồng chí trong thời gian sớm nhất!
-                </div>`;
-            content.scrollTop = content.scrollHeight;
-        }, 1000);
-    }
+        content.scrollTop = content.scrollHeight;
+    });
 }
+
 </script>
 
 </html>

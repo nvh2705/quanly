@@ -93,8 +93,8 @@
                     Thực đơn: {{ menu.sang }}
                 </div>
                 <div class="text-sm">
-                    Tổng tiền dự tính: <span class="text-danger font-weight-bold">{{ "{:,}".format(prices.sang * 139) }}đ</span>
-                    <br><small class="text-muted">(Tính trên 139 học viên)</small>
+                    Tổng tiền dự tính: <span class="text-danger font-weight-bold">{{ "{:,}".format(prices.sang * stats['sang']['hv']) }}đ</span>
+                    <br><small class="text-muted">(Tính trên {{stats['sang']['hv']}} học viên)</small>
                 </div>
             </div>
         </div>
@@ -110,8 +110,8 @@
                     Thực đơn: {{ menu.trua }}
                 </div>
                 <div class="text-sm">
-                    Tổng tiền dự tính: <span class="text-danger font-weight-bold">{{ "{:,}".format(prices.trua * 139) }}đ</span>
-                    <br><small class="text-muted">(Tính trên 139 học viên)</small>
+                    Tổng tiền dự tính: <span class="text-danger font-weight-bold">{{ "{:,}".format(prices.trua * stats['trua']['hv']) }}đ</span>
+                    <br><small class="text-muted">(Tính trên {{stats['trua']['hv']}} học viên)</small>
                 </div>
             </div>
         </div>
@@ -127,8 +127,8 @@
                     Thực đơn: {{ menu.toi }}
                 </div>
                 <div class="text-sm">
-                    Tổng tiền dự tính: <span class="text-danger font-weight-bold">{{ "{:,}".format(prices.toi * 139) }}đ</span>
-                    <br><small class="text-muted">(Tính trên 139 học viên)</small>
+                    Tổng tiền dự tính: <span class="text-danger font-weight-bold">{{ "{:,}".format(prices.toi * stats['toi']['hv']) }}đ</span>
+                    <br><small class="text-muted">(Tính trên {{stats['toi']['hv']}} học viên)</small>
                 </div>
             </div>
         </div>
